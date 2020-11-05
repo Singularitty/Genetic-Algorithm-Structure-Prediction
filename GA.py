@@ -113,6 +113,7 @@ def main():
 
     pc = 0.1        # Crossover probability
     pm = 0.05       # Mutation probability
+    convergence_value = 1000    
 
     # Generate initial population
 
@@ -148,27 +149,68 @@ def main():
 
     for k in range(1,n_gen_max+1):
 
-        # Selection
+        # Reproduction
         
-        Sorted_Fitness = list(Fitness_list)
-        Sorted_Fitness.sort()
-
-
+        total_fitness = sum(Fitness_list)
+        relative_fitness = [fit_value/total_fitness for fit_value in Fitness_list]
+        offsprings = rng.choices(list_ind_bin, weights=relative_fitness, k=len(list_ind_bin))
+        
         # Crossover
 
-        for i in range(0,n_gen_max/4):
+        for i in range(len(offsprings)):
             if rng.random() < pc:
-                index1 = Fitness_list.index(Sorted_Fitness[i*2])
-                index2 = Fitness_list.index(Sorted_Fitness[i*2+1])
+                ind_1 = offsprings[i]
+                ind_2 = rng.choice(offsprings)
+                while ind_2 == ind_1:
+                    ind_2 = rng.choice(offsprings)
                 for j in range(6):
-                    if 
-
-
+                    gene_1 = ind_1[j]
+                    gene_2 = ind_2[j]
+                    cross_site = rng.randint(1,len(gene_1) - 1)
+                    ind_1[j] = gene_1[:cross_site] + gene_2[cross_site:]
+                    ind_2[j] = gene_2[:cross_site] + gene_1[cross_site:]
+                offsprings[i] = ind_1
+                offsprings[offsprings.index(ind_2)] = ind_2
+                
         # Mutation
-
+        
+        for i in range(len(offsprings)):
+            for j in range(len(offsprings[i])):
+                gene = offsprings[i][j]
+                for icounter in range(len(gene)):
+                    if rng.random() < pm:
+                        temp_gene_list = list("gene")
+                        if temp_gene_list[icounter] == "0":
+                            temp_gene_list[icounter] = "1"
+                        else:
+                            temp_gene_list[icounter] = "0"
+                        gene = "".join(temp_gene_list)
+                offsprings[i][j] = gene
+                    
         # Compute fitness
+        
+        offsprings_decimal = [(int(offsprings[0], 2) + 1) / 32,              # x
+                     (np.pi / 2.0) * (int(offsprings[1], 2) + 1) / 128,      # theta
+                     (int(offsprings[3], 2) + 1) / 32,                       # c21
+                     (int(offsprings[4], 2) + 1) / 32,                       # c22
+                     (int(offsprings[5], 2) + 1) / 32,                       # c31
+                     (int(offsprings[6], 2) + 1) / 32,                       # c32
+                     (int(offsprings[7], 2) + 1) / 32,                       # c41
+                     (int(offsprings[8], 2) + 1) / 32,]                      # c42
 
-    # Stop when population has converged
+        Fitness_list = []
+
+        for ind in offsprings_decimal:
+            Fitness_list.append(Fitness(4,1,ind))
+        
+        # Stop when population has converged
+
+        if max(Fitness_list) >= convergence_value:
+            break
+
+    best_ind = offsprings_decimal[Fitness_list.index(max(Fitness_list))]
+
+    print(best_ind)
 
 # Executar Programa
 
