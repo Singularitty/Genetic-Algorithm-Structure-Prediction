@@ -145,6 +145,8 @@ def main():
 
     # Cycle
 
+    offsprings = list_ind_bin[:]
+    
     n_gen_max = 1000
 
     for k in range(1,n_gen_max+1):
@@ -153,7 +155,7 @@ def main():
         
         total_fitness = sum(Fitness_list)
         relative_fitness = [fit_value/total_fitness for fit_value in Fitness_list]
-        offsprings = rng.choices(list_ind_bin, weights=relative_fitness, k=len(list_ind_bin))
+        offsprings = rng.choices(offsprings, weights=relative_fitness, k=len(list_ind_bin))
         
         # Crossover
 
@@ -208,9 +210,9 @@ def main():
         if max(Fitness_list) >= convergence_value:
             break
 
-    best_ind = offsprings_decimal[Fitness_list.index(max(Fitness_list))]
+    best_individual = offsprings_decimal[Fitness_list.index(max(Fitness_list))]
 
-    print(best_ind)
+    print(best_individual)
 
 # Executar Programa
 
