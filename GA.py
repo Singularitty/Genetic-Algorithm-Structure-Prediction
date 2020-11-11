@@ -2,19 +2,19 @@ import random as rng
 from datetime import datetime
 import numpy as np
 
-        
+
 # Daoud-Cotton model
 
-global f    # Number of arms in star polymer
+global f            # Number of arms in star polymer
 f = 50.0
 
 global core_radius  #Core radius
 core_radius = 1
 
-global r_cut    #Cutoff radius
+global r_cut        #Cutoff radius
 r_cut = 2
 
-global a    #Packing fracture
+global a            #Packing fracture
 a = 2.4
 
 def daoud_cotton_u(r):
@@ -22,51 +22,85 @@ def daoud_cotton_u(r):
         return (5/18)*(f**(1.5)) * (-np.log(r/core_radius) + 1.0 / (1.0 + np.sqrt(f/2)))
     else:
         return ((5/18)*(f**(1.5))) * (core_radius / (1 + np.sqrt(f/2)) * (np.exp((np.sqrt(f)*(r - core_radius))/(2*core_radius)) / r))
-    
+
 # Define lattice vectors
 
-def triangular_lat(i,ind):
-    if i == 1:
-        return (a, 0.0)
-    else:
-        return (a*ind[0]*0.5, a*ind[0]*(np.sqrt(3)/2))
+def triangular_lat(ind):
+    return [(a, 0.0),(a*ind[0]*0.5, a*ind[0]*(np.sqrt(3)/2))]
 
-def x(i,ind):
-    if i == 1:
-        return (a, 0.0)
-    else:
-        return (a*ind[0]*np.cos(ind[1]), a*ind[0]*np.sin(ind[1]))
+def x(ind):
+    return [(a, 0.0),(a*ind[0]*np.cos(ind[1]), a*ind[0]*np.sin(ind[1]))]
 
+# Conversao de todas as estructuras equivalentes para uma estructura unica com a menor circunferencia
 
-# Positions of b particles in this case 4 total
+def unique_lattice(lattice_vectors,ind):
+    x_1 = lattice_vectors(0,ind)
+    x_2 = lattice_vectors(1,ind)
+    lattices = [[(x_1[0]+x_2[0] if (x_1[0]+x_2[0]) > 0 else (x_1[0]-x_2[0]),   x_1[1]+x_2[1] if (x_1[1]+x_2[1]) > 0 else x_1[1]-x_2[1])   ,x_2],
+                [(x_1[0]-x_2[0] if (x_1[0]-x_2[0]) > 0 else x_1[0]+x_2[0],   x_1[1]-x_2[1] if (x_1[1]-x_2[1]) > 0 else x_1[1]+x_2[1])   ,x_2],
+                [x_1,    (x_1[0]+x_2[0] if (x_1[0]+x_2[0]) > 0 else x_1[0]-x_2[0],   x_1[1]+x_2[1] if (x_1[1]+x_2[1]) > 0 else x_1[1]-x_2[1])],
+                [x_1,    (x_1[0]-x_2[0] if (x_1[0]-x_2[0]) > 0 else x_1[0]+x_2[0],    x_1[1]-x_2[1] if (x_1[1]-x_2[1]) > 0 else x_1[1]+x_2[1])]]
+    
+    lattice_radius  = []
+    
+    for lat in lattices:
+        point_1 = lat[0]
+        point_2 = lat[1]
+        m_a = (point_2[1]-point_1[1])/(point_2[0]-point_1[0])
+        m_b = point_2[1]/point_2[0]
+        x = (m_a*m_b*(point_1[1]) + m_b*(point_1[0]+point_2[0]) - m_a*(point_2[0])) / 2*(m_b-m_a)
+        y = (-1 / m_a) * (x - (point_1[0]-point_2[1])/2) + (point_1[1]-point_2[1])/2
+        radius_1 = np.sqrt((x-point_1[0])**2 + (y-point_1[1])**2)
+        radius_2 = np.sqrt((x-point_2[0])**2 + (y-point_2[1])**2)
+        if radius_1 >= radius_2:
+            lattice_radius.append(radius_1)
+        else:
+            lattice_radius.append(radius_2)
+    
+    return lattices[lattice_radius.index(min(lattice_radius))]
 
+def structure(lattice_vectors,ind):
+    
+    n = 10
+    
+    vec_1 = lattice_vectors[0]
+    vec_2 = lattice_vectors[1]
+    
+    c21 = ind[2]
+    c22 = ind[3]
+    c31 = ind[4]
+    c32 = ind[5]
+    c41 = ind[6]
+    c42 = ind[7]
+    
+    particle_positions = [(0,0)]
+    
+    for i in range(n):
+        for j in range(n):
+            pos_2 = (i*(c21*vec_1[0]+c22*vec_2[0]),i*(c21*vec_1[1]+c22*vec_2[1]))
+            pos_3 = (i*(c31*vec_1[0]+c32*vec_2[0]),j*(c31*vec_1[1]+c32*vec_2[1]))
+            pos_4 = (i*(c41*vec_1[0]+c42*vec_2[0]),j*(c41*vec_1[1]+c42*vec_2[1]))
+            particle_positions.append(pos_2)
+            particle_positions.append(pos_3)
+            particle_positions.append(pos_4)
+            
+            
+    return particle_positions
 
-def y(i,x,ind):
-    if i == 1:
-        return (0, 0)
-    elif i == 2:
-        return (ind[i] * x(1)[0] + ind[i + 1] * x(2)[0],
-        ind[i + 1] * x(2)[1])
-    elif i == 3:
-        return (ind[i + 1] * x(1)[0] + ind[i + 2] * x(2)[0],
-        ind[i + 2] * x(2)[1])
-    else:
-        return (ind[i + 2] * x(1)[0] + ind[i + 3] * x(2)[0],
-        ind[i + 3] * x(2)[1])
+def r(position_1,position_2):
+    return np.sqrt((position_1[0]-position_2[0])**2 + (position_1[1]-position_2[1])**2)
 
 # Ground State Calculation
 
 
-def r(i, j, x, ind):
-    return np.sqrt( (y(i,x, ind)[0]-y(j,x, ind)[0])**2 + (y(i,x, ind)[1]-y(j,x, ind)[1])**2 )
-
-
-def avg_potential_energy(n, x, ind):
+def avg_potential_energy(position_list):
     energy_sum = 0
-    for i in range(1, n+1):
-        for j in range(i+1, n+1):
-            if r(i, j, x, ind) < r_cut:
-                energy_sum += daoud_cotton_u(r(i, j, x, ind))
+    n = len(position_list)
+    for i in range(1, n):
+        for j in range(i+1, n):
+            distance = r(position_list[i],position_list[j])
+            if distance < r_cut:
+                energy_sum += daoud_cotton_u(distance)
     return (0.5*n)*energy_sum
 
 
@@ -77,12 +111,12 @@ def e(i):
     return 1.0 + i * (np.log(i) / 40.0)
 
 
-def Fitness(n,i,ind):
-    return np.exp(1.0 - (avg_potential_energy(n, x, ind) ** e(i) / avg_potential_energy(n, triangular_lat, ind)))
+def Fitness(position_list,position_list_triangular,i):
+    return np.exp(1.0 - (avg_potential_energy(position_list) ** e(i) / avg_potential_energy(position_list_triangular)))
 
-
-# Individual Template
 """
+# Individual Template
+
 #                      x      theta     c21     c22     c31     c32     c41     c42
 ind_bin_template = ["00001","0000001","00001","00001","00001","00001","00001","00001"]
 
@@ -117,11 +151,11 @@ def main():
 
     # Generate initial population
 
-    list_ind = []           #Lista com os individuos todos utilizando valores decimais
-    list_ind_bin = []       #Lista igual a de cima mas em binario
-    n_ind = 100             #Numero de individuos, tem de ser par
-    rng.seed(1879723891)    #Seed para o gerador de numeros aleatorios, deixar igual por agora para testar programa sem ter imprevistos
-    #rng.seed(datetime.now())   #Seed gerada a partir da data em que o programa eh executado, bom para ter alguma randomness no programa mas nao para testar
+    offsprings_decimal = []        #Lista com os individuos todos utilizando valores decimais
+    offsprings = []                #Lista igual a de cima mas em binario
+    n_ind = 10                    #Numero de individuos, tem de ser par
+    rng.seed(1879723891)           #Seed para o gerador de numeros aleatorios, deixar igual por agora para testar programa sem ter imprevistos
+    #rng.seed(datetime.now())      #Seed gerada a partir da data em que o programa eh executado, bom para ter alguma randomness no programa mas nao para testar
 
     for i in range(0,n_ind):
         ind_bin = []
@@ -133,39 +167,41 @@ def main():
         for j in range(0,6):
             ind_bin.append(rng_bin(5))
             ind.append((int(ind_bin[j+2], 2) + 1) / 32)
-        list_ind_bin.append(ind_bin)
-        list_ind.append(ind)
+        offsprings.append(ind_bin)
+        offsprings_decimal.append(ind)
 
     # Compute fitness
 
     Fitness_list = []
 
-    for ind in list_ind:
-        Fitness_list.append(Fitness(4,1,ind))
+    for ind in offsprings_decimal:
+        positions = structure(x(ind),ind)
+        positions_triangular = structure(triangular_lat(ind),ind)
+        Fitness_list.append(Fitness(positions,positions_triangular,1))
 
     # Cycle
-
-    offsprings = list_ind_bin[:]
     
-    n_gen_max = 1000
+    n_gen_max = 1
 
-    for k in range(1,n_gen_max+1):
+    for generation in range(1,n_gen_max+1):
 
         # Reproduction
         
         total_fitness = sum(Fitness_list)
         relative_fitness = [fit_value/total_fitness for fit_value in Fitness_list]
-        offsprings = rng.choices(offsprings, weights=relative_fitness, k=len(list_ind_bin))
+        offsprings = rng.choices(offsprings, weights=relative_fitness, k=len(offsprings))
         
         # Crossover
+        
+        offsprings_available = offsprings[:]
 
         for i in range(len(offsprings)):
-            if rng.random() < pc:
+            if (rng.random() < pc) and (offsprings[i] in offsprings_available):
                 ind_1 = offsprings[i]
-                ind_2 = rng.choice(offsprings)
-                while ind_2 == ind_1:
-                    ind_2 = rng.choice(offsprings)
-                for j in range(6):
+                offsprings_available.remove(ind_1)
+                ind_2 = rng.choice(offsprings_available)
+                offsprings_available.remove(ind_2)
+                for j in range(len(ind_1)):
                     gene_1 = ind_1[j]
                     gene_2 = ind_2[j]
                     cross_site = rng.randint(1,len(gene_1) - 1)
@@ -203,7 +239,9 @@ def main():
         Fitness_list = []
 
         for ind in offsprings_decimal:
-            Fitness_list.append(Fitness(4,1,ind))
+            positions = structure(x(ind),ind)
+            positions_triangular = structure(triangular_lat(ind),ind)
+            Fitness_list.append(Fitness(positions,positions_triangular,generation))
         
         # Stop when population has converged
 
