@@ -226,15 +226,16 @@ def main():
                 offsprings[i][j] = gene
                     
         # Compute fitness
-        
-        offsprings_decimal = [(int(offsprings[0], 2) + 1) / 32,              # x
-                     (np.pi / 2.0) * (int(offsprings[1], 2) + 1) / 128,      # theta
-                     (int(offsprings[3], 2) + 1) / 32,                       # c21
-                     (int(offsprings[4], 2) + 1) / 32,                       # c22
-                     (int(offsprings[5], 2) + 1) / 32,                       # c31
-                     (int(offsprings[6], 2) + 1) / 32,                       # c32
-                     (int(offsprings[7], 2) + 1) / 32,                       # c41
-                     (int(offsprings[8], 2) + 1) / 32,]                      # c42
+        offsprings_decimal = []
+        for ind in offsprings:
+            offsprings_decimal.append([(int(ind[0], 2) + 1) / 32,        # x
+                        (np.pi / 2.0) * (int(ind[1], 2) + 1) / 128,      # theta
+                        (int(ind[2], 2) + 1) / 32,                       # c21
+                        (int(ind[3], 2) + 1) / 32,                       # c22
+                        (int(ind[4], 2) + 1) / 32,                       # c31
+                        (int(ind[5], 2) + 1) / 32,                       # c32
+                        (int(ind[6], 2) + 1) / 32,                       # c41
+                        (int(ind[7], 2) + 1) / 32,])                     # c42
 
         Fitness_list = []
 
