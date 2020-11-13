@@ -217,7 +217,7 @@ def main():
                 gene = offsprings[i][j]
                 for icounter in range(len(gene)):
                     if rng.random() < pm:
-                        temp_gene_list = list("gene")
+                        temp_gene_list = list(gene)
                         if temp_gene_list[icounter] == "0":
                             temp_gene_list[icounter] = "1"
                         else:
