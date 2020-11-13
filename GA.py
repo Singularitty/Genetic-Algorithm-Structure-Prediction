@@ -95,8 +95,8 @@ def structure(lattice_vectors,ind):
     
     particle_positions = [(0,0)]
     
-    for i in range(n):
-        for j in range(n):
+    for i in range(1,n+1):
+        for j in range(1,n+1):
             pos_2 = (i*(c21*vec_1[0]+c22*vec_2[0]),i*(c21*vec_1[1]+c22*vec_2[1]))
             pos_3 = (i*(c31*vec_1[0]+c32*vec_2[0]),j*(c31*vec_1[1]+c32*vec_2[1]))
             pos_4 = (i*(c41*vec_1[0]+c42*vec_2[0]),j*(c41*vec_1[1]+c42*vec_2[1]))
@@ -205,7 +205,7 @@ def main():
 
     # Cycle
     
-    n_gen_max = 1
+    n_gen_max = 10
 
     for generation in range(1,n_gen_max+1):
 
@@ -251,14 +251,16 @@ def main():
                     
         # Compute fitness
         
-        offsprings_decimal = [(int(offsprings[0], 2) + 1) / 32,              # x
-                     (np.pi / 2.0) * (int(offsprings[1], 2) + 1) / 128,      # theta
-                     (int(offsprings[3], 2) + 1) / 32,                       # c21
-                     (int(offsprings[4], 2) + 1) / 32,                       # c22
-                     (int(offsprings[5], 2) + 1) / 32,                       # c31
-                     (int(offsprings[6], 2) + 1) / 32,                       # c32
-                     (int(offsprings[7], 2) + 1) / 32,                       # c41
-                     (int(offsprings[8], 2) + 1) / 32,]                      # c42
+        offsprings_decimal = []
+        for ind in offsprings:
+            offsprings_decimal.append([(int(ind[0], 2) + 1) / 32,              # x
+                        (np.pi / 2.0) * (int(ind[1], 2) + 1) / 128,      # theta
+                        (int(ind[2], 2) + 1) / 32,                       # c21
+                        (int(ind[3], 2) + 1) / 32,                       # c22
+                        (int(ind[4], 2) + 1) / 32,                       # c31
+                        (int(ind[5], 2) + 1) / 32,                       # c32
+                        (int(ind[6], 2) + 1) / 32,                       # c41
+                        (int(ind[7], 2) + 1) / 32,])                     # c42
 
         Fitness_list = []
 
