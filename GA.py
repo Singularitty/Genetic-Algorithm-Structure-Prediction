@@ -75,8 +75,8 @@ def structure(lattice_vectors,ind):
     
     particle_positions = [(0,0)]
     
-    for i in range(n):
-        for j in range(n):
+    for i in range(1,n+1):
+        for j in range(1,n+1):
             pos_2 = (i*(c21*vec_1[0]+c22*vec_2[0]),i*(c21*vec_1[1]+c22*vec_2[1]))
             pos_3 = (i*(c31*vec_1[0]+c32*vec_2[0]),j*(c31*vec_1[1]+c32*vec_2[1]))
             pos_4 = (i*(c41*vec_1[0]+c42*vec_2[0]),j*(c41*vec_1[1]+c42*vec_2[1]))
