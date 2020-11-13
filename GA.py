@@ -18,6 +18,10 @@ global a            #Packing fracture
 a = 2.4
 
 def daoud_cotton_u(r):
+    """
+    Takes a float representing the distance between two particles.
+    Returns a float representing the Daoud-Cotton model potential energy of that pair of particles.
+    """
     if r <= core_radius:
         return (5/18)*(f**(1.5)) * (-np.log(r/core_radius) + 1.0 / (1.0 + np.sqrt(f/2)))
     else:
@@ -25,15 +29,27 @@ def daoud_cotton_u(r):
 
 # Define lattice vectors
 
-def triangular_lat(ind):
-    return [(a, 0.0),(a*ind[0]*0.5, a*ind[0]*(np.sqrt(3)/2))]
+def triangular_lat(ind):    # Triangular latice vectors
+    """
+    Takes a list containg the genes that make up an individual.
+    Returns a list with two tuples, were each tuple represents a primitive vector of a triangular lattice.
+    """
+    return [ (a, 0.0) , (a*ind[0]*0.5, a*ind[0]*(np.sqrt(3)/2)) ]
 
-def x(ind):
-    return [(a, 0.0),(a*ind[0]*np.cos(ind[1]), a*ind[0]*np.sin(ind[1]))]
+def x(ind):                 # General lattice vectors (depend on the individual)
+    """
+    Takes a list containg the genes that make up an individual.
+    Returns a list with two tuples, were each tuple represents a primitive vector of a lattice that depends on the individuals genes.
+    """
+    return [ (a, 0.0) , (a*ind[0]*np.cos(ind[1]), a*ind[0]*np.sin(ind[1])) ]
 
 # Conversao de todas as estructuras equivalentes para uma estructura unica com a menor circunferencia
 
 def unique_lattice(lattice_vectors,ind):
+    """
+    Takes a list with two tuples, each representing a lattice vector and a list with the genes of an individual.
+    Returns a list with two tuples, representing the equivalent lattice vectors with the smallest cell circunference.
+    """
     x_1 = lattice_vectors(0,ind)
     x_2 = lattice_vectors(1,ind)
     lattices = [[(x_1[0]+x_2[0] if (x_1[0]+x_2[0]) > 0 else (x_1[0]-x_2[0]),   x_1[1]+x_2[1] if (x_1[1]+x_2[1]) > 0 else x_1[1]-x_2[1])   ,x_2],
@@ -60,6 +76,10 @@ def unique_lattice(lattice_vectors,ind):
     return lattices[lattice_radius.index(min(lattice_radius))]
 
 def structure(lattice_vectors,ind):
+    """
+    Takes a list with two tuples where each tuple is a lattice vector, and it takes a list containing the genes of an individual.
+    Returns a list with tuples, where the tuples represent the positions of particles in a structure made by up of the original lattice structure multiplied in both directons of space.
+    """
     
     n = 10
     
@@ -75,8 +95,8 @@ def structure(lattice_vectors,ind):
     
     particle_positions = [(0,0)]
     
-    for i in range(1,n+1):
-        for j in range(1,n+1):
+    for i in range(n):
+        for j in range(n):
             pos_2 = (i*(c21*vec_1[0]+c22*vec_2[0]),i*(c21*vec_1[1]+c22*vec_2[1]))
             pos_3 = (i*(c31*vec_1[0]+c32*vec_2[0]),j*(c31*vec_1[1]+c32*vec_2[1]))
             pos_4 = (i*(c41*vec_1[0]+c42*vec_2[0]),j*(c41*vec_1[1]+c42*vec_2[1]))
@@ -88,12 +108,20 @@ def structure(lattice_vectors,ind):
     return particle_positions
 
 def r(position_1,position_2):
+    """
+    Takes two tuples representin the positions of two particles.
+    Returns a float represeting the distance in space of those two particles.
+    """
     return np.sqrt((position_1[0]-position_2[0])**2 + (position_1[1]-position_2[1])**2)
 
 # Ground State Calculation
 
 
 def avg_potential_energy(position_list):
+    """
+    Takes a list with tuples which represent the positions of particles in space.
+    Returns a float representing the average potential energy for a structure made of those particles for a given potential.
+    """
     energy_sum = 0
     n = len(position_list)
     for i in range(1, n):
@@ -108,31 +136,27 @@ def avg_potential_energy(position_list):
 
 
 def e(i):
+    """
+    Auxiliary function for the fitness function.
+    Takes an int representing the current generation of individuals.
+    Returns a float.
+    """
     return 1.0 + i * (np.log(i) / 40.0)
 
-
 def Fitness(position_list,position_list_triangular,i):
+    """
+    Takes a list with tuples representing the positions of particles, takes a int representing the current generation of individuals.
+    Returns a float, representing the Fitness of a individual.
+    """
     return np.exp(1.0 - (avg_potential_energy(position_list) ** e(i) / avg_potential_energy(position_list_triangular)))
-
-"""
-# Individual Template
-
-#                      x      theta     c21     c22     c31     c32     c41     c42
-ind_bin_template = ["00001","0000001","00001","00001","00001","00001","00001","00001"]
-
-ind_template = [(int(ind_bin[0], 2) + 1) / 32,              # x
-       (np.pi / 2.0) * (int(ind_bin[1], 2) + 1) / 128,      # theta
-       (int(ind_bin[3], 2) + 1) / 32,                       # c21
-       (int(ind_bin[4], 2) + 1) / 32,                       # c22
-       (int(ind_bin[5], 2) + 1) / 32,                       # c31
-       (int(ind_bin[6], 2) + 1) / 32,                       # c32
-       (int(ind_bin[7], 2) + 1) / 32,                       # c41
-       (int(ind_bin[8], 2) + 1) / 32,]                      # c42
-"""
 
 # Gerar um numero aleatorio em binario
 
 def rng_bin(n):
+    """
+    Takes a int which represents the length of the final binary number.
+    Returns a string which represents a number in binary where each char was randomly generated and has lenght n.
+    """
     num = ""
     for i in range(n):
         if rng.random() < 0.5:
@@ -140,7 +164,7 @@ def rng_bin(n):
         else:
             num += "1"
     return num
-            
+
 def main():
 
     # Define Probabilities
@@ -226,16 +250,15 @@ def main():
                 offsprings[i][j] = gene
                     
         # Compute fitness
-        offsprings_decimal = []
-        for ind in offsprings:
-            offsprings_decimal.append([(int(ind[0], 2) + 1) / 32,        # x
-                        (np.pi / 2.0) * (int(ind[1], 2) + 1) / 128,      # theta
-                        (int(ind[2], 2) + 1) / 32,                       # c21
-                        (int(ind[3], 2) + 1) / 32,                       # c22
-                        (int(ind[4], 2) + 1) / 32,                       # c31
-                        (int(ind[5], 2) + 1) / 32,                       # c32
-                        (int(ind[6], 2) + 1) / 32,                       # c41
-                        (int(ind[7], 2) + 1) / 32,])                     # c42
+        
+        offsprings_decimal = [(int(offsprings[0], 2) + 1) / 32,              # x
+                     (np.pi / 2.0) * (int(offsprings[1], 2) + 1) / 128,      # theta
+                     (int(offsprings[3], 2) + 1) / 32,                       # c21
+                     (int(offsprings[4], 2) + 1) / 32,                       # c22
+                     (int(offsprings[5], 2) + 1) / 32,                       # c31
+                     (int(offsprings[6], 2) + 1) / 32,                       # c32
+                     (int(offsprings[7], 2) + 1) / 32,                       # c41
+                     (int(offsprings[8], 2) + 1) / 32,]                      # c42
 
         Fitness_list = []
 
@@ -257,3 +280,20 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+"""
+Template for an indivual.
+
+#                      x      theta     c21     c22     c31     c32     c41     c42
+ind_bin_template = ["00001","0000001","00001","00001","00001","00001","00001","00001"]
+
+ind_template = [(int(ind_bin[0], 2) + 1) / 32,              # x
+       (np.pi / 2.0) * (int(ind_bin[1], 2) + 1) / 128,      # theta
+       (int(ind_bin[3], 2) + 1) / 32,                       # c21
+       (int(ind_bin[4], 2) + 1) / 32,                       # c22
+       (int(ind_bin[5], 2) + 1) / 32,                       # c31
+       (int(ind_bin[6], 2) + 1) / 32,                       # c32
+       (int(ind_bin[7], 2) + 1) / 32,                       # c41
+       (int(ind_bin[8], 2) + 1) / 32,]                      # c42
+"""
