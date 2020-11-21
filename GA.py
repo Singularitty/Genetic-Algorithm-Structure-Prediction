@@ -81,7 +81,7 @@ def structure(lattice_vectors,ind):
     Returns a list with tuples, where the tuples represent the positions of particles in a structure made by up of the original lattice structure multiplied in both directons of space.
     """
     
-    n = 10
+    n = 5
     
     vec_1 = lattice_vectors[0]
     vec_2 = lattice_vectors[1]
@@ -93,18 +93,20 @@ def structure(lattice_vectors,ind):
     c41 = ind[6]
     c42 = ind[7]
     
-    particle_positions = [(0,0)]
-    
-    for i in range(1,n+1):
-        for j in range(1,n+1):
-            pos_2 = (i*(c21*vec_1[0]+c22*vec_2[0]),i*(c21*vec_1[1]+c22*vec_2[1]))
-            pos_3 = (i*(c31*vec_1[0]+c32*vec_2[0]),j*(c31*vec_1[1]+c32*vec_2[1]))
-            pos_4 = (i*(c41*vec_1[0]+c42*vec_2[0]),j*(c41*vec_1[1]+c42*vec_2[1]))
-            particle_positions.append(pos_2)
-            particle_positions.append(pos_3)
-            particle_positions.append(pos_4)
-            
-            
+    particle_positions = []
+
+    primitive_vectors = [(c21*vec_1[0]+c22*vec_2[0],c21*vec_1[1]+c22*vec_2[1]),
+                         (c31*vec_1[0]+c32*vec_2[0],c31*vec_1[1]+c32*vec_2[1]),
+                         (c41*vec_1[0]+c42*vec_2[0],c41*vec_1[1]+c42*vec_2[1])]
+
+    for i in range(0,n+1):
+        for j in range(0,n+1):
+            for k in range(0,n+1):
+                pos = (i*primitive_vectors[0][0]+j*primitive_vectors[1][0]+k*primitive_vectors[2][0],
+                       i*primitive_vectors[0][1]+j*primitive_vectors[1][1]+k*primitive_vectors[2][1])
+                particle_positions.append(pos)
+
+
     return particle_positions
 
 def r(position_1,position_2):
@@ -202,6 +204,16 @@ def main():
         positions = structure(x(ind),ind)
         positions_triangular = structure(triangular_lat(ind),ind)
         Fitness_list.append(Fitness(positions,positions_triangular,1))
+
+
+    # Print da rede
+
+    with open("rede.xyz","w") as output:
+        positions = structure(x(offsprings_decimal[2]),offsprings_decimal[2])
+        output.write(str(len(positions)) + '\n')
+        output.write("\n")
+        for particle in positions:
+            output.write(str(particle[0]) + " " + str(particle[1]) + " 0\n")
 
     # Cycle
     
