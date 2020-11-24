@@ -18,7 +18,30 @@ import structure_generator as sg
 
 interaction_potential = settings.potential
 model = importlib.import_module(interaction_potential)
+r_cut = settings.r_cut
 
+# Ground State Calculation
+
+def r(position_1,position_2):
+    """
+    Takes two tuples representin the positions of two particles.
+    Returns a float represeting the distance in space of those two particles.
+    """
+    return np.sqrt((position_1[0]-position_2[0])**2 + (position_1[1]-position_2[1])**2)
+
+def avg_potential_energy(position_list):
+    """
+    Takes a list with tuples which represent the positions of particles in space.
+    Returns a float representing the average potential energy for a structure made of those particles for a given potential.
+    """
+    energy_sum = 0
+    n = len(position_list)
+    for i in range(1, n):
+        for j in range(i+1, n):
+            distance = r(position_list[i],position_list[j])
+            if distance < r_cut:
+                energy_sum += model.potential_energy(distance)
+    return (0.5*n)*energy_sum
 
 # Fitness function
 
@@ -36,8 +59,8 @@ def Fitness(position_list,position_list_triangular,i):
     Takes a list with tuples representing the positions of particles, takes a int representing the current generation of individuals.
     Returns a float, representing the Fitness of a individual.
     """
-    return np.exp(1.0 - (model.avg_potential_energy(position_list) 
-                        / model.avg_potential_energy(position_list_triangular))**e(i))
+    return np.exp(1.0 - (avg_potential_energy(position_list) 
+                        / avg_potential_energy(position_list_triangular))**e(i))
 
 # Gerar um numero aleatorio em binario
 
