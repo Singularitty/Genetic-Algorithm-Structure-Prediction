@@ -3,7 +3,7 @@ import settings
 
 a = settings.a
 
-# Define lattice vectors
+# Definition of lattice vectors
 
 def triangular_lat(ind):    # Triangular latice vectors
     """
