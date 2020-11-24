@@ -1,4 +1,5 @@
 import sys
+import multiprocessing as mp
 import importlib
 from datetime import datetime
 import random as rng
@@ -54,6 +55,23 @@ def rng_bin(n):
             num += "1"
     return num
 
+# Functions that are parallelized
+
+def Compute_Fitness(ind):
+    positions = sg.structure(sg.x(ind),ind)
+    positions_triangular = sg.structure(sg.triangular_lat(ind),ind)
+    return Fitness(positions,positions_triangular,1)
+
+def binary_to_decimal(ind):
+    return ([(int(ind[0], 2) + 1) / 32,                                  # x
+                        (np.pi / 2.0) * (int(ind[1], 2) + 1) / 128,      # theta
+                        (int(ind[2], 2) + 1) / 32,                       # c21
+                        (int(ind[3], 2) + 1) / 32,                       # c22
+                        (int(ind[4], 2) + 1) / 32,                       # c31
+                        (int(ind[5], 2) + 1) / 32,                       # c32
+                        (int(ind[6], 2) + 1) / 32,                       # c41
+                        (int(ind[7], 2) + 1) / 32,])                     # c42
+
 def main():
 
     # Generate initial population
@@ -78,12 +96,12 @@ def main():
 
     # Compute fitness
 
-    Fitness_list = []
+    pool = mp.Pool(mp.cpu_count())
 
-    for ind in offsprings_decimal:
-        positions = sg.structure(sg.x(ind),ind)
-        positions_triangular = sg.structure(sg.triangular_lat(ind),ind)
-        Fitness_list.append(Fitness(positions,positions_triangular,1))
+    Fitness_list = pool.map(Compute_Fitness, offsprings_decimal)
+
+    pool.close()
+
 
     # Cycle
 
@@ -92,14 +110,8 @@ def main():
         # Reproduction
         
         total_fitness = sum(Fitness_list)
-        try:
-            relative_fitness = [fit_value/total_fitness for fit_value in Fitness_list]
-            offsprings = rng.choices(offsprings, weights=relative_fitness, k=len(offsprings))
-        except:
-            print(total_fitness)
-            print(relative_fitness)
-            print(offsprings)
-            sys.exit()
+        relative_fitness = [fit_value/total_fitness for fit_value in Fitness_list]
+        offsprings = rng.choices(offsprings, weights=relative_fitness, k=len(offsprings))
 
         # Crossover
         
@@ -137,23 +149,17 @@ def main():
                     
         # Compute fitness
         
-        offsprings_decimal = []
-        for ind in offsprings:
-            offsprings_decimal.append([(int(ind[0], 2) + 1) / 32,              # x
-                        (np.pi / 2.0) * (int(ind[1], 2) + 1) / 128,      # theta
-                        (int(ind[2], 2) + 1) / 32,                       # c21
-                        (int(ind[3], 2) + 1) / 32,                       # c22
-                        (int(ind[4], 2) + 1) / 32,                       # c31
-                        (int(ind[5], 2) + 1) / 32,                       # c32
-                        (int(ind[6], 2) + 1) / 32,                       # c41
-                        (int(ind[7], 2) + 1) / 32,])                     # c42
+        pool = mp.Pool(mp.cpu_count())
 
-        Fitness_list = []
+        offsprings_decimal = pool.map(binary_to_decimal, offsprings)
 
-        for ind in offsprings_decimal:
-            positions = sg.structure(sg.x(ind),ind)
-            positions_triangular = sg.structure(sg.triangular_lat(ind),ind)
-            Fitness_list.append(Fitness(positions,positions_triangular,generation))
+        pool.close()
+
+        pool = mp.Pool(mp.cpu_count())
+
+        Fitness_list = pool.map(Compute_Fitness, offsprings_decimal)
+
+        pool.close()
         
         # Stop when population has converged
 
