@@ -1,8 +1,8 @@
-import random as rng
-from datetime import datetime
-import numpy as np
 import sys
-
+import importlib
+from datetime import datetime
+import random as rng
+import numpy as np
 
 import settings
 
@@ -12,9 +12,20 @@ n_ind = settings.n_ind
 pc = settings.pc
 pm = settings.pm
 
-import structure_generator as sg
-import daoud_cotton_model as dcm
 
+import structure_generator as sg
+
+
+interaction_potential = settings.potential
+model = importlib.import_module(interaction_potential)
+
+
+def r(position_1,position_2):
+    """
+    Takes two tuples representin the positions of two particles.
+    Returns a float represeting the distance in space of those two particles.
+    """
+    return np.sqrt((position_1[0]-position_2[0])**2 + (position_1[1]-position_2[1])**2)
 
 # Fitness function
 
@@ -32,7 +43,7 @@ def Fitness(position_list,position_list_triangular,i):
     Takes a list with tuples representing the positions of particles, takes a int representing the current generation of individuals.
     Returns a float, representing the Fitness of a individual.
     """
-    return np.exp(1.0 - (dcm.avg_potential_energy(position_list) ** e(i) / dcm.avg_potential_energy(position_list_triangular)))
+    return np.exp(1.0 - (model.avg_potential_energy(position_list) ** e(i) / model.avg_potential_energy(position_list_triangular)))
 
 # Gerar um numero aleatorio em binario
 

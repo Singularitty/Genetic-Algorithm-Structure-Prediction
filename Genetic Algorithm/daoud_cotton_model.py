@@ -13,7 +13,7 @@ def r(position_1,position_2):
     """
     return np.sqrt((position_1[0]-position_2[0])**2 + (position_1[1]-position_2[1])**2)
 
-def daoud_cotton_u(r):
+def potential_energy(r):
     """
     Takes a float representing the distance between two particles.
     Returns a float representing the Daoud-Cotton model potential energy of that pair of particles.
@@ -37,5 +37,5 @@ def avg_potential_energy(position_list):
         for j in range(i+1, n):
             distance = r(position_list[i],position_list[j])
             if distance < r_cut:
-                energy_sum += daoud_cotton_u(distance)
+                energy_sum += potential_energy(distance)
     return (0.5*n)*energy_sum
