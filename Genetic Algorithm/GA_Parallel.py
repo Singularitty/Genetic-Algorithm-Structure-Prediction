@@ -79,7 +79,7 @@ def rng_bin(n):
             num += "1"
     return num
 
-# Functions that are parallelized
+# Functions that run in parallel
 
 def Compute_Fitness(ind):
     positions = sg.structure(sg.x(ind),ind)
