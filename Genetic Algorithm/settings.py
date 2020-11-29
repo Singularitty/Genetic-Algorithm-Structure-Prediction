@@ -14,7 +14,7 @@ potential = available_potentials[0]
 ####################################
 
 #Fitness convergence value
-convergence_value = 100.
+convergence_value = 2.5
 
 #Number of maximum Generations
 n_gen_max = 10
