@@ -1,4 +1,5 @@
 import sys
+import multiprocessing as mp
 import importlib
 from datetime import datetime
 import random as rng
@@ -8,26 +9,29 @@ import settings
 
 convergence_value = settings.convergence_value
 n_gen_max = settings.n_gen_max
-n_ind = settings.n_ind
+n_individuals = settings.n_ind
 pc = settings.pc
 pm = settings.pm
 
-
-import structure_generator as sg
-
+import Structure as st
 
 interaction_potential = settings.potential
-model = importlib.import_module(interaction_potential)
+InteractionModel = importlib.import_module(interaction_potential)
 r_cut = settings.r_cut
+
+rng.seed(1879723891)
+#rng.seed(datetime.now())
 
 # Ground State Calculation
 
-def r(position_1,position_2):
+def r(position1, position2):
     """
     Takes two tuples representin the positions of two particles.
     Returns a float represeting the distance in space of those two particles.
     """
-    return np.sqrt((position_1[0]-position_2[0])**2 + (position_1[1]-position_2[1])**2)
+    x = position1[0] - position2[0]
+    y = position1[1] - position2[1]
+    return np.sqrt(x**2 + y**2)
 
 def avg_potential_energy(position_list):
     """
@@ -38,33 +42,26 @@ def avg_potential_energy(position_list):
     n = len(position_list)
     for i in range(1, n):
         for j in range(i+1, n):
-            distance = r(position_list[i],position_list[j])
+            distance = r(position_list[i], position_list[j])
             if distance < r_cut:
-                energy_sum += model.potential_energy(distance)
+                energy_sum += InteractionModel.potential_energy(distance)
     return (0.5*n)*energy_sum
+
 
 # Fitness function
 
-
-def e(i):
-    """
-    Auxiliary function for the fitness function.
-    Takes an int representing the current generation of individuals.
-    Returns a float.
-    """
-    return 1.0 + i * (np.log(i) / 40.0)
-
-def Fitness(position_list,position_list_triangular,i):
+def fitness(structure, triangular_structure, generation):
     """
     Takes a list with tuples representing the positions of particles, takes a int representing the current generation of individuals.
     Returns a float, representing the Fitness of a individual.
     """
-    return np.exp(1.0 - (avg_potential_energy(position_list) 
-                        / avg_potential_energy(position_list_triangular))**e(i))
+    ratio = (avg_potential_energy(structure) / avg_potential_energy(triangular_structure))
+    e = (1.0 + generation * (np.log(generation) / 40.0))
+    return np.exp(1.0 - ratio**e)
 
 # Gerar um numero aleatorio em binario
 
-def rng_bin(n):
+def RngBinStr(n):
     """
     Takes a int which represents the length of the final binary number.
     Returns a string which represents a number in binary where each char was randomly generated and has lenght n.
@@ -77,77 +74,88 @@ def rng_bin(n):
             num += "1"
     return num
 
+def ComputeFitness(individual):
+    generation = individual[8]
+    structure = st.Structure(st.Lattice(individual),individual)
+    triangular_structure = st.Structure(st.TriangularLattice(individual), individual)
+    return fitness(structure, triangular_structure, generation)
+
+def BinaryToDecimal(ind):
+    return   ([(int(ind[0], 2) + 1) / 32,                     # x
+             (np.pi / 2.0) * (int(ind[1], 2) + 1) / 128,      # theta
+             (int(ind[2], 2) + 1) / 32,                       # c21
+             (int(ind[3], 2) + 1) / 32,                       # c22
+             (int(ind[4], 2) + 1) / 32,                       # c31
+             (int(ind[5], 2) + 1) / 32,                       # c32
+             (int(ind[6], 2) + 1) / 32,                       # c41
+             (int(ind[7], 2) + 1) / 32,                       # c42
+             1])                                              # Generation
+
 def main():
 
     # Generate initial population
 
-    offsprings_decimal = []        #Lista com os individuos todos utilizando valores decimais
-    offsprings = []                #Lista igual a de cima mas em binario
-    rng.seed(1879723891)           #Seed para o gerador de numeros aleatorios, deixar igual por agora para testar programa sem ter imprevistos
-    #rng.seed(datetime.now())      #Seed gerada a partir da data em que o programa eh executado, bom para ter alguma randomness no programa mas nao para testar
+    populationBinary = [[RngBinStr(5) if j != 1 else RngBinStr(7) for j in range(8)] for i in range(n_individuals)]
 
-    for i in range(0,n_ind):
-        ind_bin = []
-        ind = []
-        ind_bin.append(rng_bin(5))
-        ind.append((int(ind_bin[0], 2) + 1) / 32)
-        ind_bin.append(rng_bin(7))
-        ind.append((np.pi / 2.0) * (int(ind_bin[1], 2) + 1) / 128)
-        for j in range(0,6):
-            ind_bin.append(rng_bin(5))
-            ind.append((int(ind_bin[j+2], 2) + 1) / 32)
-        offsprings.append(ind_bin)
-        offsprings_decimal.append(ind)
+    populationDecimal = []
+
+    for i in range(n_individuals):
+        populationDecimal.append([])
+        for j in range(9):
+            if j != 1 and j != 8:
+                populationDecimal[i].append((int(populationBinary[i][j], 2) + 1) / 32)
+            elif j != 8:
+                populationDecimal[i].append((np.pi / 2.0) * (int(populationBinary[i][j], 2) + 1) / 128)
+            else:
+                populationDecimal[i].append(1)
+
 
     # Compute fitness
 
-    Fitness_list = []
+    pool = mp.Pool(mp.cpu_count())
 
-    for ind in offsprings_decimal:
-        positions = sg.structure(sg.x(ind),ind)
-        positions_triangular = sg.structure(sg.triangular_lat(ind),ind)
-        Fitness_list.append(Fitness(positions,positions_triangular,1))
+    fitness_list = pool.map(ComputeFitness, populationDecimal)
+
+    pool.close()
+
 
     # Cycle
 
-    for generation in range(1,n_gen_max+1):
+    for gen in range(1, n_gen_max + 1):
 
         # Reproduction
-        
-        total_fitness = sum(Fitness_list)
-        try:
-            relative_fitness = [fit_value/total_fitness for fit_value in Fitness_list]
-            offsprings = rng.choices(offsprings, weights=relative_fitness, k=len(offsprings))
-        except:
-            print(total_fitness)
-            print(relative_fitness)
-            print(offsprings)
-            sys.exit()
+
+        total_fitness = sum(fitness_list)
+
+        relative_fitness = [fit_value/total_fitness for fit_value in fitness_list]
+
+        populationBinary = rng.choices(populationBinary, weights=relative_fitness, k=n_individuals)
 
         # Crossover
-        
-        offsprings_available = offsprings[:]
 
-        for i in range(len(offsprings)):
-            if (rng.random() < pc) and (offsprings[i] in offsprings_available):
-                ind_1 = offsprings[i]
+        offsprings_available = populationBinary[:]
+
+        for i in range(n_individuals):
+            if (rng.random() < pc) and (populationBinary[i] in offsprings_available):
+                ind_1 = populationBinary[i]
                 offsprings_available.remove(ind_1)
                 ind_2 = rng.choice(offsprings_available)
+                temp_index = populationBinary.index(ind_2)
                 offsprings_available.remove(ind_2)
-                for j in range(len(ind_1)):
+                for j in range(8):
                     gene_1 = ind_1[j]
                     gene_2 = ind_2[j]
-                    cross_site = rng.randint(1,len(gene_1) - 1)
+                    cross_site = rng.randint(1, len(gene_1) - 1)
                     ind_1[j] = gene_1[:cross_site] + gene_2[cross_site:]
                     ind_2[j] = gene_2[:cross_site] + gene_1[cross_site:]
-                offsprings[i] = ind_1
-                offsprings[offsprings.index(ind_2)] = ind_2
-                
+                populationBinary[i] = ind_1
+                populationBinary[temp_index] = ind_2
+
         # Mutation
-        
-        for i in range(len(offsprings)):
-            for j in range(len(offsprings[i])):
-                gene = offsprings[i][j]
+
+        for i in range(n_individuals):
+            for j in range(8):
+                gene = populationBinary[i][j]
                 for icounter in range(len(gene)):
                     if rng.random() < pm:
                         temp_gene_list = list(gene)
@@ -156,45 +164,36 @@ def main():
                         else:
                             temp_gene_list[icounter] = "0"
                         gene = "".join(temp_gene_list)
-                offsprings[i][j] = gene
-                    
+                populationBinary[i][j] = gene
+
         # Compute fitness
-        
-        offsprings_decimal = []
-        for ind in offsprings:
-            offsprings_decimal.append([(int(ind[0], 2) + 1) / 32,              # x
-                        (np.pi / 2.0) * (int(ind[1], 2) + 1) / 128,      # theta
-                        (int(ind[2], 2) + 1) / 32,                       # c21
-                        (int(ind[3], 2) + 1) / 32,                       # c22
-                        (int(ind[4], 2) + 1) / 32,                       # c31
-                        (int(ind[5], 2) + 1) / 32,                       # c32
-                        (int(ind[6], 2) + 1) / 32,                       # c41
-                        (int(ind[7], 2) + 1) / 32,])                     # c42
 
-        Fitness_list = []
+        pool = mp.Pool(mp.cpu_count())
 
-        for ind in offsprings_decimal:
-            positions = sg.structure(sg.x(ind),ind)
-            positions_triangular = sg.structure(sg.triangular_lat(ind),ind)
-            Fitness_list.append(Fitness(positions,positions_triangular,generation))
-        
+        populationDecimal = pool.map(BinaryToDecimal, populationBinary)
+
+        pool.close()
+
+        for i in range(n_individuals):
+            populationDecimal[i][8] = gen
+
+        pool = mp.Pool(mp.cpu_count())
+
+        fitness_list = pool.map(ComputeFitness, populationDecimal)
+
+        pool.close()
+
         # Stop when population has converged
 
-        if max(Fitness_list) >= convergence_value:
-            break
+        most_fit = max(fitness_list)
+        if most_fit >= convergence_value: break
+        else: print(most_fit)
 
-    best_individual = offsprings_decimal[Fitness_list.index(max(Fitness_list))]
-    print(max(Fitness_list))
-    # Print da rede
-
-    with open("rede.xyz","w") as output:
-        positions = sg.structure(sg.x(best_individual),best_individual)
-        output.write(str(len(positions)) + '\n')
-        output.write("\n")
-        for particle in positions:
-            output.write(str(particle[0]) + " " + str(particle[1]) + " 0\n")
-
+    best_individual = populationDecimal[fitness_list.index(most_fit)]
+    print(most_fit)
     print(best_individual)
+
+    st.SaveStructure(best_individual)
 
 # Executar Programa
 
