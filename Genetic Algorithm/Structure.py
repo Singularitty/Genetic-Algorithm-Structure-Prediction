@@ -10,14 +10,17 @@ def TriangularLattice(ind):    # Triangular latice vectors
     Takes a list containg the genes that make up an individual.
     Returns a list with two tuples, were each tuple represents a primitive vector of a triangular lattice.
     """
-    return [ (a, 0.0) , (a*ind[0]*0.5, a*ind[0]*(np.sqrt(3)/2)) ]
+    x = ind[0]
+    return [ (a, 0.0) , (a*x*0.5, a*x*(np.sqrt(3)/2)) ]
 
 def Lattice(ind):                 # General lattice vectors (depend on the individual)
     """
     Takes a list containg the genes that make up an individual.
     Returns a list with two tuples, were each tuple represents a primitive vector of a lattice that depends on the individuals genes.
     """
-    return [ (a, 0.0) , (a*ind[0]*np.cos(ind[1]), a*ind[0]*np.sin(ind[1])) ]
+    x = ind[0]
+    theta = ind[1]
+    return [ (a, 0.0) , (a*x*np.cos(theta), a*x*np.sin(theta)) ]
 
 # Conversao de todas as estructuras equivalentes para uma estructura unica com a menor circunferencia
 
@@ -71,9 +74,12 @@ def Structure(lattice_vectors,ind):
     
     particle_positions = []
 
-    primitive_vectors = [(c21*vec_1[0]+c22*vec_2[0],c21*vec_1[1]+c22*vec_2[1]),
+    primitive_vectors = np.array([(c21*vec_1[0]+c22*vec_2[0],c21*vec_1[1]+c22*vec_2[1]),
                          (c31*vec_1[0]+c32*vec_2[0],c31*vec_1[1]+c32*vec_2[1]),
-                         (c41*vec_1[0]+c42*vec_2[0],c41*vec_1[1]+c42*vec_2[1])]
+                         (c41*vec_1[0]+c42*vec_2[0],c41*vec_1[1]+c42*vec_2[1])])
+
+
+
 
     for i in range(0,n+1):
         for j in range(0,n+1):
@@ -89,6 +95,6 @@ def Structure(lattice_vectors,ind):
 def SaveStructure(individual, filename="structure.xyz"):
     with open(filename,"w") as output:
         positions = Structure(Lattice(individual), individual)
-        output.write(len(positions), '\n\n')
+        output.write(str(len(positions)) + ' \n\n')
         for particle in positions:
-            output.write(particle[0], particle[1], "0\n")
+            output.write(str(particle[0]) +  " " +  str(particle[1]) +  " 0\n")

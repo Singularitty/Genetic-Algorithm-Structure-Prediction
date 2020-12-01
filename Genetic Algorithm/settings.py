@@ -14,13 +14,13 @@ potential = available_potentials[0]
 ####################################
 
 #Fitness convergence value
-convergence_value = 2.5
+convergence_value = 2.7
 
 #Number of maximum Generations
-n_gen_max = 10
+n_gen_max = 100
 
 #Number of random individuals generated 
-n_ind = 10 
+n_ind = 1000
 
 #Crossover probability
 pc = 0.1
